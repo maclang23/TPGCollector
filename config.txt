@@ -1,0 +1,20 @@
+# TPG Submission Collector Configuration File
+# Leave any value blank to omit it from the round message.
+# Do not remove the keys themselves, only clear the values.
+
+# --- Links ---
+SUBMISSION_TRACKER_URL = https://www.google.com/maps/d/u/0/edit?mid=1HUZ1FBLdtsTeEB75fEqMwmtPsTNrewQ&usp=sharing
+LEADERBOARD_URL = https://docs.google.com/spreadsheets/d/1yySWEgAQt-JrxCKDrntQNR13N3m9whi6Vp3-4lA7nsY/edit?usp=sharing
+RULES_URL = https://docs.google.com/document/d/1gK93eqVsWQuRqLSuRe3txIaCYo2pcrjkylm6AiKFO5I/edit?usp=sharing
+
+# --- Display Labels (optional, customize the link text) ---
+SUBMISSION_TRACKER_LABEL = Submission Tracker
+LEADERBOARD_LABEL = Leaderboard
+RULES_LABEL = Rules
+
+# --- Timezone ---
+# Round end times you enter will be interpreted in this timezone.
+# Discord will then display the timestamp in each viewer's local time automatically.
+# Examples: America/New_York, America/Chicago, America/Los_Angeles,
+#           Europe/London, Europe/Paris, Asia/Tokyo, Australia/Sydney, UTC
+TIMEZONE = America/New_York
