@@ -77,36 +77,60 @@ def parse_coordinates(text):
 # -------------------------------
 # --- Helper: Discord Parsing ---
 # -------------------------------
+def strip_emojis_and_tags(text):
+    text = re.sub(r'<a?:\w+:\d+>', '', text)
+    text = re.sub(r':\w+:', '', text)
+    text = re.sub(
+        u'[\U00010000-\U0010ffff'
+        u'\U0001F600-\U0001F64F'
+        u'\U0001F300-\U0001F5FF'
+        u'\U0001F680-\U0001F6FF'
+        u'\U0001F700-\U0001F77F'
+        u'\U0001F780-\U0001F7FF'
+        u'\U0001F800-\U0001F8FF'
+        u'\U0001F900-\U0001F9FF'
+        u'\U0001FA00-\U0001FA6F'
+        u'\U0001FA70-\U0001FAFF'
+        u'\u2600-\u26FF\u2700-\u27BF]+',
+        '', text, flags=re.UNICODE
+    )
+    return text.strip()
+
+SKIP_LINES = {"Forwarded", "Image", "Role icon"}
+
 def clean_discord_text(raw_file):
-    if not os.path.exists(raw_file):
-        return []
+    if not os.path.exists(raw_file): return []
     with open(raw_file, "r", encoding="utf-8") as f:
         raw_lines = [line.strip().replace('\xa0', ' ') for line in f]
-
+    
     submissions = []
     current_user, current_msg = None, []
 
-    header_trigger = re.compile(r'(Role icon|Yesterday at|Today at|— \d{1,2}/\d{1,2}/\d{2,4})', re.I)
+    header_trigger = re.compile(r'(Role icon|Yesterday at|Today at|— \d{1,2}/\d{1,2}/\d{2,4}|— \d{1,2}:\d{2}\s*(AM|PM))', re.I)
 
     for i in range(len(raw_lines)):
         line = raw_lines[i]
-        if not line:
-            continue
-
+        if not line: continue
+        
         if header_trigger.search(line):
             name_part = re.split(r'—', line)[0].strip()
+
             potential_user = re.split(r'Role icon|Sapphire|Diamond|Ruby|Gold|Silver|Bronze|TPG Fanatic', name_part, flags=re.I)[0].strip()
-            potential_user = re.sub(r'<a?:\w+:\d+>|:\w+:', '', potential_user)
-            potential_user = potential_user.rstrip(',').strip()
+            potential_user = strip_emojis_and_tags(potential_user).rstrip(',').strip()
 
             if not potential_user:
-                for j in range(i - 1, -1, -1):
+                for j in range(i-1, max(i-10, -1), -1):
                     prev = raw_lines[j]
-                    if prev and not header_trigger.search(prev) and prev not in ["Forwarded", "Image"]:
-                        potential_user = re.sub(r'<a?:\w+:\d+>|:\w+:', '', prev).strip()
+                    if not prev:
+                        continue  # skip blank lines, don't stop
+                    if header_trigger.search(prev):
+                        break  # hit another header — stop, don't overshoot
+                    cleaned_prev = strip_emojis_and_tags(prev).strip()
+                    if cleaned_prev and cleaned_prev not in SKIP_LINES:
+                        potential_user = cleaned_prev
                         break
-
-            if potential_user and potential_user not in ["Forwarded", "Image"]:
+            
+            if potential_user and potential_user not in SKIP_LINES:
                 if current_user and current_msg:
                     submissions.append({"user": current_user, "msg": " ".join(current_msg)})
                 current_user = potential_user
@@ -114,14 +138,13 @@ def clean_discord_text(raw_file):
                 continue
 
         if current_user:
-            if line not in ["Forwarded", "Image"]:
+            if line not in SKIP_LINES:
                 current_msg.append(line)
 
     if current_user and current_msg:
         submissions.append({"user": current_user, "msg": " ".join(current_msg)})
-
+        
     return submissions
-
 # -------------------------------
 # --- Main Logic ---
 # -------------------------------
